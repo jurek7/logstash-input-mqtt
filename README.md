@@ -2,7 +2,7 @@
 
 This is a plugin for [Logstash](https://github.com/elastic/logstash).
 
-The aim of this project is to provide production-ready logstash input plugin for MQTT protocol. This plugin uses paho.mqtt.ruby client implementation which is less popular than other libraries but supports features like QoS and persisten connection out of box.
+The aim of this project is to provide production-ready logstash input plugin for MQTT protocol. This plugin uses paho.mqtt.ruby client implementation which is less popular than other libraries but supports features like QoS and persistent connection out of box.
 
 It is fully free and fully open source. The license is Apache 2.0, meaning you are pretty much free to use it however you want in whatever way.
 
