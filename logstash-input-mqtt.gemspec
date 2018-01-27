@@ -1,5 +1,5 @@
 Gem::Specification.new do |s|
-  s.name          = 'logstash-input-mqtt'
+  s.name          = 'logstash-input-mqtt-paho'
   s.version       = '0.1.0'
   s.licenses      = ['Apache-2.0']
   s.summary       = 'Logstash MQTT input plugin.'
