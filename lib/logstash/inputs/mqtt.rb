@@ -1,51 +1,65 @@
 # encoding: utf-8
-require "logstash/inputs/base"
-require "logstash/namespace"
-require "stud/interval"
-require "socket" # for Socket.gethostname
+require 'logstash/inputs/base'
+require 'logstash/namespace'
+require 'socket'
+require 'paho-mqtt'
 
 # Generate a repeating message.
 #
 # This plugin is intented only as an example.
 
 class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
-  config_name ""
+	config_name 'mqtt'
 
-  # If undefined, Logstash will complain, even if codec is unused.
-  default :codec, "plain"
+	# If undefined, Logstash will complain, even if codec is unused.
+	default :codec, 'plain'
 
-  # The message string to use in the event.
-  config :message, :validate => :string, :default => "Hello World!"
+	# https://github.com/RubyDevInc/paho.mqtt.ruby#clients-parameters
+	config :host, :validate => :string, :required => true
+	config :port, :validate => :number, :default => 1883
+	config :topic, :validate => :string, :required => true
+	config :qos, :validate => :number, :default => 0
+	config :mqtt_version, :validate => :string, :default => '3.1.1'
+	config :clean_session, :validate => :boolean, :default => true
+	config :client_id, :validate => :string, :default => nil
+	config :username, :validate => :string, :default => nil
+	config :password, :validate => :string, :default => nil
+	config :ssl, :validate => :boolean, :default => false
+	config :will_topic, :validate => :string, :default => nil
+	config :will_payload, :validate => :string, :default => ''
+	config :will_qos, :validate => :string, :default => 0
+	config :will_retain, :validate => :boolean, :default => false
 
-  # Set how frequently messages should be sent.
-  #
-  # The default, `1`, means send a message every second.
-  config :interval, :validate => :number, :default => 1
+	public
+	def register
+		@logstash_host = Socket.gethostname
+	end # def register
 
-  public
-  def register
-    @host = Socket.gethostname
-  end # def register
+	def run(queue)
+		@client = PahoMqtt::Client.new({
+			:host => @host,
+			:port => @port,
+			:persistent => true, # keep connection persistent
+			:mqtt_version => @mqtt_version,
+			:clean_session => @clean_session,
+			:client_id => @client_id,
+			:username => @username,
+			:password => @password,
+			:ssl => @ssl,
+			:will_topic => @will_topic,
+			:will_payload => @will_payload,
+			:will_qos => @will_qos,
+			:will_retain => @will_retain
+		})
+		@client.on_message do |message|
+			event = LogStash::Event.new('message' => message.payload, 'host' => @logstash_host)
+			decorate(event)
+			queue << event
+		end
+		@client.connect
+		@client.subscribe([@topic, @qos])
 
-  def run(queue)
-    # we can abort the loop if stop? becomes true
-    while !stop?
-      event = LogStash::Event.new("message" => @message, "host" => @host)
-      decorate(event)
-      queue << event
-      # because the sleep interval can be big, when shutdown happens
-      # we want to be able to abort the sleep
-      # Stud.stoppable_sleep will frequently evaluate the given block
-      # and abort the sleep(@interval) if the return value is true
-      Stud.stoppable_sleep(@interval) { stop? }
-    end # loop
-  end # def run
+		Stud.stoppable_sleep(1) { stop? } while !stop?
+	end # def run
 
-  def stop
-    # nothing to do in this case so it is not necessary to define stop
-    # examples of common "stop" tasks:
-    #  * close sockets (unblocking blocking reads/accepts)
-    #  * cleanup temporary files
-    #  * terminate spawned threads
-  end
 end # class LogStash::Inputs::Mqtt

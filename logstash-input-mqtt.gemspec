@@ -2,9 +2,8 @@ Gem::Specification.new do |s|
   s.name          = 'logstash-input-mqtt'
   s.version       = '0.1.0'
   s.licenses      = ['Apache-2.0']
-  s.summary       = 'TODO: Write a short summary, because Rubygems requires one.'
-  s.description   = '{TODO: Write a longer description or delete this line.'
-  s.homepage      = 'TODO: Put your plugin''s website or public repo URL here.'
+  s.summary       = 'Logstash MQTT input plugin.'
+  s.homepage      = 'https://github.com/jurek7/logstash-input-mqtt'
   s.authors       = ['juri']
   s.email         = 'jurkiewiczmichal@gmail.com'
   s.require_paths = ['lib']
@@ -20,6 +19,6 @@ Gem::Specification.new do |s|
   # Gem dependencies
   s.add_runtime_dependency "logstash-core-plugin-api", "~> 2.0"
   s.add_runtime_dependency 'logstash-codec-plain'
-  s.add_runtime_dependency 'stud', '>= 0.0.22'
+  s.add_runtime_dependency 'paho-mqtt', '>= 1.0.5'
   s.add_development_dependency 'logstash-devutils', '>= 0.0.16'
 end
