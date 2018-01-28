@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    logstash-input-mqtt-paho (0.1.0)
+    logstash-input-paho-mqtt (0.1.1)
       logstash-codec-plain
       logstash-core-plugin-api (~> 2.0)
       paho-mqtt (>= 1.0.5)
@@ -129,7 +129,7 @@ PLATFORMS
 
 DEPENDENCIES
   logstash-devutils (>= 0.0.16)
-  logstash-input-mqtt-paho!
+  logstash-input-paho-mqtt!
 
 BUNDLED WITH
    1.16.1
