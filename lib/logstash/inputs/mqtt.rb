@@ -52,9 +52,13 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			:will_retain => @will_retain
 		})
 		@client.on_message do |message|
-			event = LogStash::Event.new('message' => message.payload, 'host' => @logstash_host)
-			decorate(event)
-			queue << event
+			@codec.decode(message) do |event|
+				host = event.get("host") || @logstash_host
+				event.set("host", host)
+
+				decorate(event)
+				queue << event
+			end
 		end
 		@client.connect
 		@client.subscribe([@topic, @qos])
