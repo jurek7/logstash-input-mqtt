@@ -60,7 +60,20 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 				queue << event
 			end
 		end
-		@client.connect
+		
+		begin
+			@client.connect
+		rescue PahoMqtt::Exception => e
+			@logger.warn("Error while setting up connection for MQTT broker! Retrying.",
+				:message => e.message,
+ 				:class => e.class.name,
+				:location => e.backtrace.first
+			)
+			Stud.stoppable_sleep(1) { stop? }
+			retry
+		end
+
+		# subscribe to topic
 		@client.subscribe([@topic, @qos])
 
 		Stud.stoppable_sleep(1) { stop? } while !stop?
