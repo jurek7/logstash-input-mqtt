@@ -52,7 +52,7 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			:will_retain => @will_retain
 		})
 		@client.on_message do |message|
-			@codec.decode(message) do |event|
+			@codec.decode(message.payload) do |event|
 				host = event.get("host") || @logstash_host
 				event.set("host", host)
 
