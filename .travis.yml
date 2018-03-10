@@ -1,0 +1,3 @@
+language: ruby
+rvm:
+  - jruby-9.1.13.0
