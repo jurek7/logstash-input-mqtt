@@ -55,6 +55,7 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			@codec.decode(message.payload) do |event|
 				host = event.get("host") || @logstash_host
 				event.set("host", host)
+				event.set("topic", message.topic)
 
 				decorate(event)
 				queue << event
