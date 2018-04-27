@@ -9,6 +9,8 @@ require 'paho-mqtt'
 # This plugin is intented only as an example.
 
 class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
+  require "logstash/inputs/mqtt/logstash_mqtt"
+
 	config_name 'mqtt'
 
 	# If undefined, Logstash will complain, even if codec is unused.
@@ -29,17 +31,27 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 	config :will_payload, :validate => :string, :default => ''
 	config :will_qos, :validate => :string, :default => 0
 	config :will_retain, :validate => :boolean, :default => false
-
+	config :persistent, :validate => :boolean, :default => true
+	config :logfile, :validate => :string, :default => '/dev/stdout' #workaround that let paho_mqtt to log into stdout on linux system
+	config :log_level, :validate => :string, :default => 'ERROR' 
+  config :reconnect_retries, :validate => :number, :default => -1 #-1 infinite loop
+  config :reconnect_sleep_time, :validate => :number, :default => 5
+  
 	public
 	def register
 		@logstash_host = Socket.gethostname
 	end # def register
 
 	def run(queue)
-		@client = PahoMqtt::Client.new({
+    #there is no other way to setup logger for PahoMqtt only by filename but /dev/stdout on linux system works!
+	  PahoMqtt.logger = @logfile
+    #levels: DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
+    PahoMqtt.logger.level = @log_level
+
+		@client = RecoverableMqttClient.new({
 			:host => @host,
 			:port => @port,
-			:persistent => true, # keep connection persistent
+			:persistent => @persistent, # keep connection persistent
 			:mqtt_version => @mqtt_version,
 			:clean_session => @clean_session,
 			:client_id => @client_id,
@@ -49,7 +61,9 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			:will_topic => @will_topic,
 			:will_payload => @will_payload,
 			:will_qos => @will_qos,
-			:will_retain => @will_retain
+			:will_retain => @will_retain,
+			:retry_reconnection_max_count => @reconnect_retries,
+      :retry_reconnection_sleep_time => @reconnect_sleep_time,
 		})
 		@client.on_message do |message|
 			@codec.decode(message.payload) do |event|
