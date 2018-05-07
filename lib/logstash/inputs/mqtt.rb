@@ -32,21 +32,20 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 	config :will_qos, :validate => :string, :default => 0
 	config :will_retain, :validate => :boolean, :default => false
 	config :persistent, :validate => :boolean, :default => true
-	config :logfile, :validate => :string, :default => '/dev/stdout' #workaround that let paho_mqtt to log into stdout on linux system
+	config :logfile, :validate => :string, :default => nil
 	config :log_level, :validate => :string, :default => 'ERROR' 
-  config :reconnect_retries, :validate => :number, :default => -1 #-1 infinite loop
-  config :reconnect_sleep_time, :validate => :number, :default => 5
-  
+	config :reconnect_retries, :validate => :number, :default => -1 #-1 infinite loop
+	config :reconnect_sleep_time, :validate => :number, :default => 5
+
 	public
 	def register
 		@logstash_host = Socket.gethostname
 	end # def register
 
 	def run(queue)
-    #there is no other way to setup logger for PahoMqtt only by filename but /dev/stdout on linux system works!
-	  PahoMqtt.logger = @logfile
-    #levels: DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
-    PahoMqtt.logger.level = @log_level
+		PahoMqtt.logger = @logfile unless @logfile.nil?
+		#levels: DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
+		PahoMqtt.logger.level = @log_level unless @logfile.nil?
 
 		@client = RecoverableMqttClient.new({
 			:host => @host,
