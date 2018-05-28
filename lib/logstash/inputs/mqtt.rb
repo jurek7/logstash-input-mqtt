@@ -36,6 +36,9 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 	config :log_level, :validate => :string, :default => 'ERROR' 
 	config :reconnect_retries, :validate => :number, :default => -1 #-1 infinite loop
 	config :reconnect_sleep_time, :validate => :number, :default => 5
+	config :certificate_path, :validate => :string, :default => nil
+	config :key_path, :validate => :string, :default => nil
+	config :root_ca_path, :validate => :string, :default => nil
 
 	public
 	def register
@@ -64,6 +67,11 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			:retry_reconnection_max_count => @reconnect_retries,
       :retry_reconnection_sleep_time => @reconnect_sleep_time,
 		})
+
+		if @ssl
+			@client.config_ssl_context(@certificate_path, @key_path, @root_ca_path)
+		end
+
 		@client.on_message do |message|
 			@codec.decode(message.payload) do |event|
 				host = event.get("host") || @logstash_host
