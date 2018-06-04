@@ -9,8 +9,6 @@ require 'paho-mqtt'
 # This plugin is intented only as an example.
 
 class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
-  require "logstash/inputs/mqtt/logstash_mqtt"
-
 	config_name 'mqtt'
 
 	# If undefined, Logstash will complain, even if codec is unused.
@@ -32,10 +30,10 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 	config :will_qos, :validate => :string, :default => 0
 	config :will_retain, :validate => :boolean, :default => false
 	config :persistent, :validate => :boolean, :default => true
-	config :logfile, :validate => :string, :default => nil
+	config :logfile, :validate => :string, :default => '/dev/stdout'
 	config :log_level, :validate => :string, :default => 'ERROR' 
-	config :reconnect_retries, :validate => :number, :default => -1 #-1 infinite loop
-	config :reconnect_sleep_time, :validate => :number, :default => 5
+	config :reconnect_limit, :validate => :number, :default => -1 #-1 infinite loop
+	config :reconnect_delay, :validate => :number, :default => 5
 	config :certificate_path, :validate => :string, :default => nil
 	config :key_path, :validate => :string, :default => nil
 	config :root_ca_path, :validate => :string, :default => nil
@@ -50,7 +48,7 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 		#levels: DEBUG < INFO < WARN < ERROR < FATAL < UNKNOWN
 		PahoMqtt.logger.level = @log_level unless @logfile.nil?
 
-		@client = RecoverableMqttClient.new({
+		@client = PahoMqtt::Client.new({
 			:host => @host,
 			:port => @port,
 			:persistent => @persistent, # keep connection persistent
@@ -64,8 +62,8 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 			:will_payload => @will_payload,
 			:will_qos => @will_qos,
 			:will_retain => @will_retain,
-			:retry_reconnection_max_count => @reconnect_retries,
-      :retry_reconnection_sleep_time => @reconnect_sleep_time,
+			:reconnect_limit => @reconnect_limit,
+			:reconnect_delay => @reconnect_delay,
 		})
 
 		if @ssl
@@ -91,7 +89,7 @@ class LogStash::Inputs::Mqtt < LogStash::Inputs::Base
 		rescue PahoMqtt::Exception => e
 			@logger.warn("Error while setting up connection for MQTT broker! Retrying.",
 				:message => e.message,
- 				:class => e.class.name,
+				:class => e.class.name,
 				:location => e.backtrace.first
 			)
 			Stud.stoppable_sleep(1) { stop? }
